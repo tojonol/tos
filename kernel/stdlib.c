@@ -1,7 +1,7 @@
 
 #include <kernel.h>
 
-
+//int k_strlen(const char* *s)
 int k_strlen(const char* str)
 {
 	int strlen = 0;

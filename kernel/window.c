@@ -1,39 +1,118 @@
-
 #include <kernel.h>
 
+//poke a character on the screen where the cursor is
+void poke_char(WINDOW* wnd, WORD ch)
+{
+	int xoffset = (wnd->x+wnd->cursor_x)*2;
+	int yoffset = (wnd->y+wnd->cursor_y)*160;
+	poke_w(xoffset + yoffset + 0xb8000, ch);
+}
 
-
-
+//move the cursor to position x y
 void move_cursor(WINDOW* wnd, int x, int y)
 {
 	wnd->cursor_x = x;
 	wnd->cursor_y = y;
 }
 
-
+//remove the cursor from the screen
 void remove_cursor(WINDOW* wnd)
 {
+	poke_char(wnd,' ');
 }
 
-
+//Show the cursor on the screen
 void show_cursor(WINDOW* wnd)
 {
+	poke_char(wnd, wnd->cursor_char | (0x0f << 8));
 }
 
-
+//clear the window
 void clear_window(WINDOW* wnd)
 {
+	move_cursor(wnd, 0, 0);
+	int i, j;
+	//iterater through the window and set the characters to 0
+	for (i = wnd->x; i< wnd->width; i++)
+	{
+		for (j = wnd->y; j< wnd->height; j++)
+		{
+			wnd->cursor_x = i;
+			wnd->cursor_y = j;
+			poke_char(wnd, 0);
+		}
+	}
+	move_cursor(wnd, 0, 0);
 }
 
+//move cursor forward
+void advance_cursor(WINDOW* wnd)
+{
+	wnd->cursor_x++;
+	if (wnd->width == wnd->cursor_x)
+	{
+		wnd->cursor_x = 0;
+		wnd->cursor_y++;
+	}
+}
 
+//write a char to the screen
 void output_char(WINDOW* wnd, unsigned char c)
 {
+    int i = 0, j = 0;
+    WORD prevchar;
+    remove_cursor(wnd);
+    //if the characte is newline
+    if (c== '\n')
+    {
+	wnd->cursor_x = 0;
+	wnd->cursor_y++;
+    }
+    //if the character is a letter
+    else
+    {
+	poke_char(wnd, (short unsigned int) c | (0x0f << 8));
+	wnd->cursor_x++;
+	if (wnd->cursor_x == wnd->width)
+	{
+	    wnd->cursor_x = 0;
+	    wnd->cursor_y++;
+	}
+    }
+
+    //if we have reached the bottom line we need to shift
+    //everything up
+    if (wnd->cursor_y == wnd->height)
+    {
+	for (i = 0; i< wnd->height; i++)
+        {
+             for (j = 0; j< wnd->width; j++)
+             {
+                 wnd->cursor_x = j;
+                 wnd->cursor_y = i;
+                 //get char from previous line
+		 if(i==wnd->height-1)
+		    prevchar=' ';
+		 else
+		    prevchar=peek_w(160*(wnd->y+i+1)+2*(wnd->x+j)+0xb8000);
+	         poke_char(wnd, prevchar);
+             }
+        }
+    	wnd->cursor_x = 0;
+    	wnd->cursor_y = wnd->height - 1;
+    }
+    show_cursor(wnd);
 }
 
-
-
+//While we have not reached the end of string, output each char
 void output_string(WINDOW* wnd, const char *str)
 {
+	while (*str != '\0')
+	{
+		unsigned char c = (unsigned char) *str;
+		output_char(wnd, c);
+		str++;
+	}
 }
 
 
