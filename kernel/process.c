@@ -3,6 +3,7 @@
 PCB pcb[MAX_PROCS];
 PCB *next_proc_ptr;
 
+//helper method for maintaining the stack
 MEM_ADDR pushStack(MEM_ADDR esp, LONG ptr)
 {
     esp = esp - 4;
@@ -16,6 +17,7 @@ PORT create_process (void (*ptr_to_new_proc) (PROCESS, PARAM),
 		     PARAM param,
 		     char *name)
 {
+    //initialize the process values
     LONG default_value = 0;
     MEM_ADDR     esp;
     PROCESS      new_proc;
