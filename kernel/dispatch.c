@@ -26,22 +26,23 @@ void add_ready_queue (PROCESS proc)
     //add the process at that level and set pointers to self
     if (ready_queue[proc->priority] == NULL)
     {
-	ready_queue[proc->priority] = proc;
-	proc->next = proc;
-	proc->prev = proc;
-        ready_processes[proc->priority]=1;
+      ready_queue[proc->priority] = proc;
+      proc->next = proc;
+      proc->prev = proc;
+      ready_processes[proc->priority]=1;
     }
     //otherwise there is a process there
     //add the process before the existing process
     //increase the count of processes ready at that level
     else
     {
-	proc->next = ready_queue[proc->priority];
-	proc->prev = ready_queue[proc->priority]->prev;
-	ready_queue[proc->priority]->prev->next = proc;
-	ready_queue[proc->priority]->prev = proc;
-        ready_processes[proc->priority]= 1+ ready_processes[proc->priority];
+      proc->next = ready_queue[proc->priority];
+      proc->prev = ready_queue[proc->priority]->prev;
+      ready_queue[proc->priority]->prev->next = proc;
+      ready_queue[proc->priority]->prev = proc;
+      ready_processes[proc->priority]= 1+ ready_processes[proc->priority];
     }
+    proc->state = STATE_READY;
 }
 
 
@@ -59,15 +60,16 @@ void remove_ready_queue (PROCESS proc)
     //remove it
     if (proc->next == proc)
     {
-	ready_queue[proc->priority] = NULL;
-	ready_processes[proc->priority] = 0;
+      ready_queue[proc->priority] = NULL;
+      ready_processes[proc->priority] = 0;
     }
     //otherwise we clean up the pointers removing the process
     else
     {
-	ready_queue[proc->priority] = proc->next;
-	proc->next->prev = proc->prev;
-	proc->prev->next = proc->next;
+      ready_queue[proc->priority] = proc->next;
+      proc->next->prev = proc->prev;
+      proc->prev->next = proc->next;
+      ready_processes[proc->priority] = ready_processes[proc->priority]-1;
     }
 }
 
@@ -81,16 +83,25 @@ void remove_ready_queue (PROCESS proc)
 //ASSIGNMENT 3
 PROCESS dispatcher()
 {
-    int i, j;
+    int j;
     //go through each process, if there is a process at that priority
     //and grab the highest priority queue's next process
     for(j = MAX_READY_QUEUES-1; j > -1; j--)
     {
-    	if (ready_processes[j] >= 1 )
-	{
-       	    return active_proc->next;
-	}
+      //if there is a process at the given priority level
+      if(ready_processes[j]>0)
+      {
+        //if the active process is at the priotrity level start next process
+        if(active_proc->priority == j)
+          return active_proc->next;
+        //otherwise get the process at the new priority level and begin
+        else
+          return ready_queue[j];
+      }
     }
+    //There should never be no processes available
+    assert(0);
+    return NULL;
 }
 
 
@@ -106,9 +117,33 @@ PROCESS dispatcher()
 //ASSIGNMENT 4
 void resign()
 {
-	active_proc = dispatcher();
-	//check to make sure we retrieved something
-	check_active();
+   check_active();
+
+   //push stack contents
+   asm("pushl %eax;");
+   asm("pushl %ecx;");
+   asm("pushl %edx;");
+   asm("pushl %ebx;");
+   asm("pushl %ebp;");
+   asm("pushl %esi;");
+   asm("pushl %edi;");
+
+   asm ("movl %%esp,%0" : "=r" (active_proc->esp) : );
+
+   //allow dispatcher to set active process
+   active_proc = dispatcher();
+   check_active();
+
+   asm ("movl %0,%%esp" : : "r" (active_proc->esp));
+
+   //pop the stack contents in reverse push order
+   asm("popl %edi;");
+   asm("popl %esi;");
+   asm("popl %ebp;");
+   asm("popl %ebx;");
+   asm("popl %edx;");
+   asm("popl %ecx;");
+   asm("popl %eax;");
 }
 
 void check_active()
@@ -128,7 +163,7 @@ void init_dispatcher()
 
     for (i = 0; i < MAX_READY_QUEUES; i++)
     {
-	ready_queue [i] = NULL;
+      ready_queue [i] = NULL;
     	ready_processes[i] = 0;
     }
     add_ready_queue (active_proc);
