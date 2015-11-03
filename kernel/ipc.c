@@ -54,7 +54,7 @@ void close_port (PORT port)
 //Sends data to specified port
 void send (PORT dest_port, void* data)
 {
-    Process dest_process = dest_port->owner;
+    PROCESS dest_process = dest_port->owner;
     //if (reciever is recieved blocked and port is open)
     if (dest_port->open && dest_process->state == STATE_RECEIVE_BLOCKED)
     {
@@ -88,7 +88,7 @@ void send (PORT dest_port, void* data)
 //Sends data to specified port
 void message (PORT dest_port, void* data)
 {
-    Process dest_process = dest_port->owner;
+    PROCESS dest_process = dest_port->owner;
     //if (receiver is receive blocked and port is open)
     if (dest_process->state == STATE_RECEIVE_BLOCKED && dest_port->open)
     {
