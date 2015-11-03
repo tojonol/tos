@@ -157,14 +157,15 @@ void* receive (PROCESS* sender)
             deliver_proc->state = STATE_REPLY_BLOCKED;
             return receiver_process->param_data;
         }
+    }
     //else
-        remove_ready_queue (active_proc);
-        active_proc->param_data = NULL;
-        active_proc->state = STATE_RECEIVE_BLOCKED;
-        //Change to STATE_RECEIVED_BLOCKED
-        resign();
-        *sender = active_proc->param_proc;
-        return active_proc->param_data;
+    remove_ready_queue (active_proc);
+    active_proc->param_data = NULL;
+    active_proc->state = STATE_RECEIVE_BLOCKED;
+    //Change to STATE_RECEIVED_BLOCKED
+    resign();
+    *sender = active_proc->param_proc;
+    return active_proc->param_data;
 }
 
 
