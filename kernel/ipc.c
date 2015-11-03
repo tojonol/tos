@@ -7,8 +7,8 @@ PORT next_port;
 //creates a port to the active process
 PORT create_port()
 {
-  PORT newport = create_new_port(active_proc)
-  return newport;
+    PORT newport = create_new_port(active_proc);
+    return newport;
 }
 
 
@@ -34,7 +34,6 @@ PORT create_new_port (PROCESS owner)
         newport->next = NULL;
     }
     owner->first_port = newport;
-    
     return newport;
 }
 
