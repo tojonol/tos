@@ -144,17 +144,17 @@ void* receive (PROCESS* sender)
             p->blocked_list_tail = NULL;
         
         //if (sender is STATE_MESSAGE_BLOCKED)
-        if (deliver_proc->state == STATE_MESSAGE_BLOCKED)
+        if (receiver_process->state == STATE_MESSAGE_BLOCKED)
         {
             //Change state of sender to STATE_READY
             add_ready_queue (deliver_proc);
             return receiver_process->param_data;
         }
         //if (sender is STATE_SEND_BLOCKED)
-        else if (deliver_proc->state == STATE_SEND_BLOCKED)
+        else if (receiver_process->state == STATE_SEND_BLOCKED)
         {
             //Change state of sender to STATE_REPLY_BLOCKED
-            deliver_proc->state = STATE_REPLY_BLOCKED;
+            receiver_process->state = STATE_REPLY_BLOCKED;
             return receiver_process->param_data;
         }
     }
@@ -186,7 +186,7 @@ void init_ipc()
     for (i = 0; i< MAX_PORTS; i++)
     {
         port[i].magic = MAGIC_PORT;
-        port[i].user = FALSE;
+        port[i].used = FALSE;
         //give reference to next port
         if (i != MAX_PORTS-1)
         {
