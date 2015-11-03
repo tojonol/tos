@@ -147,7 +147,7 @@ void* receive (PROCESS* sender)
         if (receiver_process->state == STATE_MESSAGE_BLOCKED)
         {
             //Change state of sender to STATE_READY
-            add_ready_queue (deliver_proc);
+            add_ready_queue (receiver_process);
             return receiver_process->param_data;
         }
         //if (sender is STATE_SEND_BLOCKED)
