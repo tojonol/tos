@@ -86,7 +86,7 @@ PROCESS dispatcher()
     int j;
     //go through each process, if there is a process at that priority
     //and grab the highest priority queue's next process
-    for(j = MAX_READY_QUEUES-1; j > -1; j--)
+    for(j = MAX_READY_QUEUES-1; j >= 0; j--)
     {
       //if there is a process at the given priority level
       if(ready_processes[j]>0)
@@ -117,6 +117,7 @@ PROCESS dispatcher()
 //ASSIGNMENT 4
 void resign()
 {
+   
    check_active();
 
    //push stack contents
