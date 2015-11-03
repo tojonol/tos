@@ -188,9 +188,13 @@ void init_ipc()
         port[i].user = FALSE;
         //give reference to next port
         if (i != MAX_PORTS-1)
+        {
             port[i].next = &port[i+1];
+        }
         //if port is last in ipc then give it null value
         else
+        {
             port[i].next = NULL;
+        }
     }
 }
