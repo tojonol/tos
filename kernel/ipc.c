@@ -39,15 +39,13 @@ PORT create_new_port (PROCESS owner)
 }
 
 
-
-
+//Sets port to open
 void open_port (PORT port)
 {
     port->open = TRUE;
 }
 
-
-
+//Sets port to closed
 void close_port (PORT port)
 {
     port->open = FALSE;
@@ -100,6 +98,8 @@ void* receive (PROCESS* sender)
 void reply (PROCESS sender)
 {
     //Add the process replied to back to the ready queue
+    add_ready_queue (sender);
+    resign();
     //resign()
 }
 
@@ -108,8 +108,16 @@ void init_ipc()
 {
     int i;
     next_port = port;
-    for (i = 0; i<= MAX_PORTS; i++)
+    //initialize all ports
+    for (i = 0; i< MAX_PORTS; i++)
     {
-        port[i].port
+        port[i].magic = MAGIC_PORT;
+        port[i].user = FALSE;
+        //give reference to next port
+        if (i != MAX_PORTS-1)
+            port[i].next = &port[i+1];
+        //if port is last in ipc then give it null value
+        else
+            port[i].next = NULL;
     }
 }
