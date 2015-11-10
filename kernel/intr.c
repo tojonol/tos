@@ -1,4 +1,3 @@
-
 #include <kernel.h>
 
 BOOL interrupts_initialized = FALSE;
@@ -23,9 +22,19 @@ void load_idt (IDT* base)
     asm ("lidt %0" : "=m" (mem48));
 }
 
-
+//Homework 6
 void init_idt_entry (int intr_no, void (*isr) (void))
 {
+  //initialize slide 20
+  idt[intr_no].offset_0_15  = (unsigned) isr & 0xffff;
+  idt[intr_no].offset_16_31 = ((unsigned) isr >> 16) & 0xffff;
+  idt[intr_no].unused       = 3;
+  idt[intr_no].p            = 1;
+  idt[intr_no].dpl          = 0;
+  idt[intr_no].dt           = 0;
+  idt[intr_no].type         = 0xe;
+  idt[intr_no].dword_count  = 0;
+  idt[intr_no].selector     = CODE_SELECTOR;
 }
 
 
@@ -37,6 +46,56 @@ void init_idt_entry (int intr_no, void (*isr) (void))
 void isr_timer ();
 void dummy_isr_timer ()
 {
+    /*
+     *	PUSHL	%EAX		; Save process' context
+     *  PUSHL   %ECX
+     *  PUSHL   %EDX
+     *  PUSHL   %EBX
+     *  PUSHL   %EBP
+     *  PUSHL   %ESI
+     *  PUSHL   %EDI
+     */
+    asm ("isr_timer:"); //DEFINE TIMER
+    asm ("pushl %eax;pushl %ecx;pushl %edx");
+    asm ("pushl %ebx;pushl %ebp;pushl %esi;pushl %edi");
+
+    /* Save the context pointer ESP to the PCB */
+    asm ("movl %%esp,%0" : "=m" (active_proc->esp) : );
+
+    p = interrupt_table[TIMER_IRQ];
+
+    if (p == NULL) {
+	panic ("service_intr_0x61: Spurious interrupt");
+    }
+
+    if (p->state != STATE_INTR_BLOCKED) {
+	panic ("service_intr_0x61: No process waiting");
+    }
+
+    /* Add event handler to ready queue */
+    add_ready_queue (p);
+
+    active_proc = dispatcher();
+
+    /* Restore context pointer ESP */
+    asm ("movl %0,%%esp" : : "m" (active_proc->esp) );
+
+    /*
+     *	MOVB  $0x20,%AL	; Reset interrupt controller
+     *	OUTB  %AL,$0x20
+     *	POPL  %EDI      ; Restore previously saved context
+     *  POPL  %ESI
+     *  POPL  %EBP
+     *  POPL  %EBX
+     *  POPL  %EDX
+     *  POPL  %ECX
+     *  POPL  %EAX
+     *	IRET		; Return to new process
+     */
+    asm ("movb $0x20,%al;outb %al,$0x20");
+    asm ("popl %edi;popl %esi;popl %ebp;popl %ebx");
+    asm ("popl %edx;popl %ecx;popl %eax");
+    asm ("iret");
 }
 
 
@@ -47,6 +106,57 @@ void dummy_isr_timer ()
 void isr_com1 ();
 void dummy_isr_com1 ()
 {
+    /*
+     *	PUSHL	%EAX		; Save process' context
+     *  PUSHL   %ECX
+     *  PUSHL   %EDX
+     *  PUSHL   %EBX
+     *  PUSHL   %EBP
+     *  PUSHL   %ESI
+     *  PUSHL   %EDI
+     */
+    asm ("isr_com1:");
+    asm ("pushl %eax;pushl %ecx;pushl %edx");
+    asm ("pushl %ebx;pushl %ebp;pushl %esi;pushl %edi");
+
+    /* Save the context pointer ESP to the PCB */
+    asm ("movl %%esp,%0" : "=m" (active_proc->esp) : );
+
+    p = interrupt_table[KEYB_IRQ];
+
+    if (p == NULL) {
+	panic ("service_intr_0x61: Spurious interrupt");
+    }
+
+    if (p->state != STATE_INTR_BLOCKED) {
+	panic ("service_intr_0x61: No process waiting");
+    }
+
+    /* Add event handler to ready queue */
+    add_ready_queue (p);
+
+    active_proc = dispatcher();
+
+    /* Restore context pointer ESP */
+    asm ("movl %0,%%esp" : : "m" (active_proc->esp) );
+
+    /*
+     *	MOVB  $0x20,%AL	; Reset interrupt controller
+     *	OUTB  %AL,$0x20
+     *	POPL  %EDI      ; Restore previously saved context
+     *  POPL  %ESI
+     *  POPL  %EBP
+     *  POPL  %EBX
+     *  POPL  %EDX
+     *  POPL  %ECX
+     *  POPL  %EAX
+     *	IRET		; Return to new process
+     */
+    asm ("movb $0x20,%al;outb %al,$0x20");
+    asm ("popl %edi;popl %esi;popl %ebp;popl %ebx");
+    asm ("popl %edx;popl %ecx;popl %eax");
+    asm ("iret");
+
 }
 
 
@@ -145,6 +255,52 @@ void re_program_interrupt_controller ()
     asm ("movb $0x00,%al;outb %al,$0xA1;call delay");
 }
 
+/*
+ * dummy_isr
+ */
+ void default_isr();
+ void dummy_default_isr()
+ {
+   asm ("isr:");
+   asm ("push %eax; push %ecx; push %edx");
+   asm ("push %ebx; push %ebp; push %esi; push %edi");
+   asm ("movb $0x20,%al");
+   asm ("outb %al,$0x20");
+   asm ("pop %edi; pop %esi; pop %ebp; pop %ebx");
+   asm ("pop %edx; pop %ecx; pop %eax");
+   asm("iret");
+ }
+
+void isr_error();
+void dummy_isr_error()
+{
+  error();
+}
+void error()
+{
+  WINDOW error_window = {10, 12, 80, 1, 0, 0, ' '};
+  wprintf (&error_window, "Fatal exception (%s)", active_proc->name);
+  //infinite loop
+  //while (1) ;
+}
+
+
+
+//Homework 6
 void init_interrupts()
 {
+  int i;
+
+  load_idt (idt);
+  for (i = 0; i < MAX_INTERRUPTS; i++)
+  {
+    init_idt_entry (i, dummy_default_isr);
+    if (i < 16)
+      init_idt_entry (i, dummy_isr_error);
+  }
+
+  re_program_interrupt_controller();
+
+  interrupts_initialized = TRUE;
+  asm ("sti");
 }

@@ -117,7 +117,7 @@ PROCESS dispatcher()
 //ASSIGNMENT 4
 void resign()
 {
-   
+
    check_active();
 
    //push stack contents
@@ -145,6 +145,7 @@ void resign()
    asm("popl %edx;");
    asm("popl %ecx;");
    asm("popl %eax;");
+   asm("ret");
 }
 
 void check_active()
