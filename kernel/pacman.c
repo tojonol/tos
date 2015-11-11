@@ -39,7 +39,7 @@ char *maze[] = {
 void draw_maze_char(char maze_char)
 {
     char ch = ' ';
-    
+
     // For details of PC-ASCII characters see:
     // http://www.jimprice.com/jim-asc.shtml
     switch (maze_char) {
@@ -82,18 +82,20 @@ void draw_maze_char(char maze_char)
 void draw_maze()
 {
     int x, y;
-    
+
     clear_window(pacman_wnd);
     y = 0;
-    while (maze[y] != NULL) {
-	char* row = maze[y];
-	x = 0;
-	while (row[x] != '\0') {
-	    char ch = row[x];
-	    draw_maze_char(ch);
-	    x++;
-	}
-	y++;
+    while (maze[y] != NULL)
+    {
+      char* row = maze[y];
+      x = 0;
+      while (row[x] != '\0')
+      {
+        char ch = row[x];
+        draw_maze_char(ch);
+        x++;
+      }
+      y++;
     }
     wprintf(pacman_wnd, "PacMan ");
 }
@@ -113,24 +115,78 @@ int random()
 
 void init_ghost(GHOST* ghost)
 {
-    while (1) {
-	int x = random() % MAZE_WIDTH;
-	int y = random() % MAZE_HEIGHT;
-	if (maze[y][x] != ' ') continue;
-	ghost->x = x;
-	ghost->y = y;
-	break;
+  while (1)
+  {
+    int x = random() % MAZE_WIDTH;
+    int y = random() % MAZE_HEIGHT;
+    if (maze[y][x] != ' ')
+      continue;
+    ghost->x = x;
+    ghost->y = y;
+    break;
+  }
+}
+
+
+void next_direction(int* dx, int* dy)
+{
+    *dx = 0;
+    *dy = 0;
+    int dir = random() % 4;
+    switch (dir)
+    {
+      case 0:
+        *dx--;
+        break;
+      case 1:
+	      *dx++;
+        break;
+      case 2:
+        *dy--;
+        break;
+      case 3:
+        *dy++;
+        break;
+    }
+}
+
+BOOL move_ghost(GHOST* ghost, int dx, int dy)
+{
+    int prev_x = ghost->x;
+    int prev_y = ghost->y;
+    int new_x = prev_x + dx;
+    int new_y = prev_y + dy;
+    //if there is no open space
+    if (maze[new_y][new_x] != ' ')
+      return FALSE;
+    move_cursor(pacman_wnd, prev_x, prev_y);
+    remove_cursor(pacman_wnd);
+    move_cursor(pacman_wnd, new_x, new_y);
+    show_cursor(pacman_wnd);
+    ghost->x = new_x;
+    ghost->y = new_y;
+    return TRUE;
+}
+
+void create_new_ghost()
+{
+    GHOST ghost;
+    int dx, dy;
+
+    init_ghost(&ghost);
+    while (1)
+    {
+      sleep(10);
+      next_direction(&dx, &dy);
+      while (move_ghost(&ghost, dx, dy) == FALSE)
+      {
+        next_direction(&dx, &dy);
+      }
+      resign();
     }
 }
 
 
-
-
-void create_new_ghost()
-{
-}
-
-    
 
 
 void init_pacman(WINDOW* wnd, int num_ghosts)
@@ -145,5 +201,5 @@ void init_pacman(WINDOW* wnd, int num_ghosts)
     int j;
     for (j = 0; j < num_ghosts; j++)
         create_new_ghost();
+    resign();
 }
-
