@@ -133,28 +133,28 @@ char *printnum(char *b, unsigned int u, int base,
     char	*digs;
     static char up_digs[] = "0123456789ABCDEF";
     static char low_digs[] = "0123456789abcdef";
-    
+
     digs = upcase ? up_digs : low_digs;
     do {
 	*p-- = digs[ u % base ];
 	u /= base;
     } while( u != 0 );
-    
+
     if (negflag)
 	*b++ = '-';
-    
+
     size = &buf [MAXBUF - 1] - p;
-    
+
     if (size < length && !ladjust) {
 	while (length > size) {
 	    *b++ = padc;
 	    length--;
 	}
     }
-    
+
     while (++p != &buf [MAXBUF])
 	*b++ = *p;
-    
+
     if (size < length) {
 	/* must be ladjust */
 	while (length > size) {
@@ -210,7 +210,7 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
     unsigned int        u;
     int			negflag;
     char		c;
-    
+
     while (*fmt != '\0') {
 	if (*fmt != '%') {
 	    *buf++ = *fmt++;
@@ -219,22 +219,22 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
 	fmt++;
 	if (*fmt == 'l')
 	    fmt++;	     /* need to use it if sizeof(int) < sizeof(long) */
-	
+
 	length = 0;
 	prec = -1;
 	ladjust = FALSE;
 	padc = ' ';
-	
+
 	if (*fmt == '-') {
 	    ladjust = TRUE;
 	    fmt++;
 	}
-	
+
 	if (*fmt == '0') {
 	    padc = '0';
 	    fmt++;
 	}
-	
+
 	if (isdigit (*fmt)) {
 	    while (isdigit (*fmt))
 		length = 10 * length + ctod (*fmt++);
@@ -247,7 +247,7 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
 		length = -length;
 	    }
 	}
-	
+
 	if (*fmt == '.') {
 	    fmt++;
 	    if (isdigit (*fmt)) {
@@ -259,21 +259,21 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
 		fmt++;
 	    }
 	}
-	
+
 	negflag = FALSE;
-	
+
 	switch(*fmt) {
 	case 'b':
 	case 'B':
 	    u = va_arg (argp, unsigned int);
 	    buf = printnum (buf, u, 2, FALSE, length, ladjust, padc, 0);
 	    break;
-	    
+
 	case 'c':
 	    c = va_arg (argp, int);
 	    *buf++ = c;
 	    break;
-	    
+
 	case 'd':
 	case 'D':
 	    n = va_arg (argp, int);
@@ -285,13 +285,13 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
 	    }
 	    buf = printnum (buf, u, 10, negflag, length, ladjust, padc, 0);
 	    break;
-	    
+
 	case 'o':
 	case 'O':
 	    u = va_arg (argp, unsigned int);
 	    buf = printnum (buf, u, 8, FALSE, length, ladjust, padc, 0);
 	    break;
-	    
+
 	case 's':
 	    p = va_arg (argp, char *);
 	    if (p == (char *)0)
@@ -320,27 +320,27 @@ void vsprintf(char *buf, const char *fmt, va_list argp)
 		}
 	    }
 	    break;
-	    
+
 	case 'u':
 	case 'U':
 	    u = va_arg (argp, unsigned int);
 	    buf = printnum (buf, u, 10, FALSE, length, ladjust, padc, 0);
 	    break;
-	    
+
 	case 'x':
 	    u = va_arg (argp, unsigned int);
 	    buf = printnum (buf, u, 16, FALSE, length, ladjust, padc, 0);
 	    break;
-	    
+
 	case 'X':
 	    u = va_arg (argp, unsigned int);
 	    buf = printnum (buf, u, 16, FALSE, length, ladjust, padc, 1);
 	    break;
-	    
+
 	case '\0':
 	    fmt--;
 	    break;
-	    
+
 	default:
 	    *buf++ = *fmt;
 	}
@@ -379,5 +379,3 @@ void kprintf(const char *fmt, ...)
     output_string(kernel_window, buf);
     va_end(argp);
 }
-
-

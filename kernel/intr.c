@@ -64,17 +64,11 @@ void dummy_isr_timer ()
 
     p = interrupt_table[TIMER_IRQ];
 
-    if (p == NULL) {
-	panic ("service_intr_0x61: Spurious interrupt");
-    }
-
-    if (p->state != STATE_INTR_BLOCKED) {
-	panic ("service_intr_0x61: No process waiting");
-    }
-
     /* Add event handler to ready queue */
-    add_ready_queue (p);
-
+    if (p && p->state == STATE_INTR_BLOCKED)
+    {
+      add_ready_queue (p);
+    }
     active_proc = dispatcher();
 
     /* Restore context pointer ESP */
@@ -121,16 +115,6 @@ void dummy_isr_com1 ()
 
     /* Save the context pointer ESP to the PCB */
     asm ("movl %%esp,%0" : "=m" (active_proc->esp) : );
-
-    p = interrupt_table[KEYB_IRQ];
-
-    if (p == NULL) {
-	panic ("service_intr_0x61: Spurious interrupt");
-    }
-
-    if (p->state != STATE_INTR_BLOCKED) {
-	panic ("service_intr_0x61: No process waiting");
-    }
 
     /* Add event handler to ready queue */
     add_ready_queue (p);
@@ -218,8 +202,21 @@ void dummy_isr_keyb()
     asm ("iret");
 }
 
+//HOMEWORK 8
 void wait_for_interrupt (int intr_no)
 {
+  volatile int flag;
+  DISABLE_INTR (flag);
+
+  //save process in interrupt tabale
+  interrupt_table [intr_no] = active_proc;
+  remove_ready_queue (active_proc);
+  active_proc->state = STATE_INTR_BLOCKED;
+  resign();
+
+  //upon returning remove the process
+  interrupt_table [intr_no] = NULL;
+  ENABLE_INTR (flag);
 }
 
 
@@ -261,7 +258,7 @@ void re_program_interrupt_controller ()
  void default_isr();
  void dummy_default_isr()
  {
-   asm ("isr:");
+   asm ("default_isr:");
    asm ("push %eax; push %ecx; push %edx");
    asm ("push %ebx; push %ebp; push %esi; push %edi");
    asm ("movb $0x20,%al");
@@ -281,7 +278,7 @@ void error()
   WINDOW error_window = {10, 12, 80, 1, 0, 0, ' '};
   wprintf (&error_window, "Fatal exception (%s)", active_proc->name);
   //infinite loop
-  //while (1) ;
+  while (1) ;
 }
 
 
@@ -299,8 +296,13 @@ void init_interrupts()
       init_idt_entry (i, dummy_isr_error);
   }
 
+  //initialize timer, com, keyboard interrupt
+  init_idt_entry (TIMER_IRQ, isr_timer);
+  init_idt_entry (COM1_IRQ, isr_com1);
+  init_idt_entry (KEYB_IRQ,isr_keyb);
   re_program_interrupt_controller();
-
+  for (i = 0; i < MAX_INTERRUPTS; i++)
+ 	  interrupt_table [i] = NULL;
   interrupts_initialized = TRUE;
   asm ("sti");
 }

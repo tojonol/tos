@@ -1,6 +1,6 @@
-/* 
+/*
  * Internet ressources:
- * 
+ *
  * http://workforce.cup.edu/little/serial.html
  *
  * http://www.lammertbies.nl/comm/info/RS-232.html
@@ -30,7 +30,7 @@ void init_uart()
     inportb (COM1_PORT);
 }
 
-
+//void com_process(PROCESS self, PARAM param) slide 28
 
 void init_com ()
 {

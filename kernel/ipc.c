@@ -131,17 +131,17 @@ void* receive (PROCESS* sender)
     //if (send blocked list is not empty)
     if (p != NULL)
     {
-        
+
         //sender = first process on the send blocked list
         receiver_process = p->blocked_list_head;
         *sender = receiver_process;
-        
+
         //data = receiver_process->param_data;
         //cleanup pointer to next process
         p->blocked_list_head = p->blocked_list_head->next_blocked;
         if (p->blocked_list_head == NULL)
             p->blocked_list_tail = NULL;
-        
+
         //if (sender is STATE_MESSAGE_BLOCKED)
         if (receiver_process->state == STATE_MESSAGE_BLOCKED)
         {

@@ -19,7 +19,7 @@ void kernel_main()
     init_null_process();
     init_timer();
     init_com();
-    init_keyb();
+    //init_keyb();
     init_shell();
 
     while (1);

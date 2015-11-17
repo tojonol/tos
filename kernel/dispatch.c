@@ -22,6 +22,8 @@ int ready_processes[MAX_READY_QUEUES];
 //ASSIGNMENT 3
 void add_ready_queue (PROCESS proc)
 {
+    volatile int flag;
+    DISABLE_INTR (flag);
     //if there is nothing in the ready queue at a given priority
     //add the process at that level and set pointers to self
     if (ready_queue[proc->priority] == NULL)
@@ -43,6 +45,7 @@ void add_ready_queue (PROCESS proc)
       ready_processes[proc->priority]= 1+ ready_processes[proc->priority];
     }
     proc->state = STATE_READY;
+    ENABLE_INTR (flag);
 }
 
 
@@ -56,6 +59,8 @@ void add_ready_queue (PROCESS proc)
 //ASSIGNMENT 3
 void remove_ready_queue (PROCESS proc)
 {
+    volatile int flag;
+    DISABLE_INTR (flag);
     //if it is the only item in the ready_queue
     //remove it
     if (proc->next == proc)
@@ -71,6 +76,7 @@ void remove_ready_queue (PROCESS proc)
       proc->prev->next = proc->next;
       ready_processes[proc->priority] = ready_processes[proc->priority]-1;
     }
+    ENABLE_INTR (flag);
 }
 
 /*
@@ -84,6 +90,8 @@ void remove_ready_queue (PROCESS proc)
 PROCESS dispatcher()
 {
     int j;
+    volatile int flag;
+    DISABLE_INTR (flag);
     //go through each process, if there is a process at that priority
     //and grab the highest priority queue's next process
     for(j = MAX_READY_QUEUES-1; j >= 0; j--)
@@ -93,10 +101,16 @@ PROCESS dispatcher()
       {
         //if the active process is at the priotrity level start next process
         if(active_proc->priority == j)
+        {
+          ENABLE_INTR (flag);
           return active_proc->next;
+        }
         //otherwise get the process at the new priority level and begin
         else
+        {
+          ENABLE_INTR (flag);
           return ready_queue[j];
+        }
       }
     }
     //There should never be no processes available
@@ -118,34 +132,43 @@ PROCESS dispatcher()
 void resign()
 {
 
-   check_active();
+  check_active();
 
-   //push stack contents
-   asm("pushl %eax;");
-   asm("pushl %ecx;");
-   asm("pushl %edx;");
-   asm("pushl %ebx;");
-   asm("pushl %ebp;");
-   asm("pushl %esi;");
-   asm("pushl %edi;");
+  //hw7
+  asm("pushfl;");
+  asm("cli;");
+  asm("popl %eax;");
+  asm("xchgl (%esp),%eax;");
+  asm ("push %cs;");
 
-   asm ("movl %%esp,%0" : "=r" (active_proc->esp) : );
+  //push stack contents
+  asm("pushl %eax");
+  asm("pushl %eax;");
+  asm("pushl %ecx;");
+  asm("pushl %edx;");
+  asm("pushl %ebx;");
+  asm("pushl %ebp;");
+  asm("pushl %esi;");
+  asm("pushl %edi;");
 
-   //allow dispatcher to set active process
-   active_proc = dispatcher();
-   check_active();
+  asm ("movl %%esp,%0" : "=r" (active_proc->esp) : );
 
-   asm ("movl %0,%%esp" : : "r" (active_proc->esp));
+  //allow dispatcher to set active process
+  active_proc = dispatcher();
+  check_active();
 
-   //pop the stack contents in reverse push order
-   asm("popl %edi;");
-   asm("popl %esi;");
-   asm("popl %ebp;");
-   asm("popl %ebx;");
-   asm("popl %edx;");
-   asm("popl %ecx;");
-   asm("popl %eax;");
-   asm("ret");
+  asm ("movl %0,%%esp" : : "r" (active_proc->esp));
+
+  //pop the stack contents in reverse push order
+  asm("popl %edi;");
+  asm("popl %esi;");
+  asm("popl %ebp;");
+  asm("popl %ebx;");
+  asm("popl %edx;");
+  asm("popl %ecx;");
+  asm("popl %eax;");
+  //hw7
+  asm("iret");
 }
 
 void check_active()

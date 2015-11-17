@@ -17,13 +17,22 @@ PORT create_process (void (*ptr_to_new_proc) (PROCESS, PARAM),
 		     PARAM param,
 		     char *name)
 {
+
     //initialize the process values
     LONG default_value = 0;
     MEM_ADDR     esp;
     PROCESS      new_proc;
     PORT         new_port;
+
+    //HW7
+    volatile int flag;//disable interrupts
+    DISABLE_INTR(flag);
+
     new_proc = next_proc_ptr;
     next_proc_ptr = new_proc->next;
+
+    //HW7
+    ENABLE_INTR (flag);//reenable interrupts
     new_proc->magic             = MAGIC_PCB;
     new_proc->used              = TRUE;
     new_proc->state             = STATE_READY;
@@ -40,6 +49,21 @@ PORT create_process (void (*ptr_to_new_proc) (PROCESS, PARAM),
     esp = pushStack(esp, (LONG)new_proc);
     //RETURN ADDRESS
     esp = pushStack(esp, default_value);
+
+    //Push interrupt flags if initialized
+    //HW7 - slide 20 EFLAGS
+    if (interrupts_initialized)
+    {
+	     esp = pushStack(esp, 512);
+    }
+    else
+    {
+	     esp = pushStack(esp, default_value);
+    }
+    //Push CodeSelector
+    esp = pushStack(esp, CODE_SELECTOR);
+
+
     //ADDRESS OF NEW PROCESS
     esp = pushStack(esp, (LONG)ptr_to_new_proc);
     //EAX
@@ -115,12 +139,12 @@ void init_process()
 
     for (i = 1; i < MAX_PROCS; i++)
     {
-	pcb [i].magic = 0;
-	pcb [i].used = FALSE;
-	if (i == MAX_PROCS-1)
-	    pcb [i].next = NULL;
-	else
-	    pcb [i].next = &pcb [i+1];
+	     pcb [i].magic = 0;
+    	pcb [i].used = FALSE;
+    	if (i == MAX_PROCS-1)
+    	    pcb [i].next = NULL;
+    	else
+    	    pcb [i].next = &pcb [i+1];
     }
 
     next_proc_ptr = &pcb [1];

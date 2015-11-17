@@ -1,4 +1,5 @@
 
+
 #include <kernel.h>
 
 #define MAZE_WIDTH  19
@@ -97,7 +98,7 @@ void draw_maze()
       }
       y++;
     }
-    wprintf(pacman_wnd, "PacMan ");
+    wprintf(pacman_wnd, "Jonol's PacMan ");
 }
 
 
@@ -136,16 +137,16 @@ void next_direction(int* dx, int* dy)
     switch (dir)
     {
       case 0:
-        *dx--;
+        *dx=-1;
         break;
       case 1:
-	      *dx++;
+	      *dx=1;
         break;
       case 2:
-        *dy--;
+        *dy=-1;
         break;
       case 3:
-        *dy++;
+        *dy=1;
         break;
     }
 }
@@ -176,7 +177,6 @@ void create_new_ghost()
     init_ghost(&ghost);
     while (1)
     {
-      sleep(10);
       next_direction(&dx, &dy);
       while (move_ghost(&ghost, dx, dy) == FALSE)
       {
@@ -186,7 +186,10 @@ void create_new_ghost()
     }
 }
 
-
+void ghost_process(PROCESS self, PARAM param)
+{
+    create_new_ghost();
+}
 
 
 void init_pacman(WINDOW* wnd, int num_ghosts)
@@ -200,6 +203,8 @@ void init_pacman(WINDOW* wnd, int num_ghosts)
 
     int j;
     for (j = 0; j < num_ghosts; j++)
-        create_new_ghost();
+    {
+        create_process(ghost_process, 3, 0, "Ghost");
+    }
     resign();
 }
