@@ -16,6 +16,8 @@ PORT create_new_port (PROCESS owner)
 {
     //get next port and advance port reference
     PORT newport = next_port;
+    volatile int flag;
+    DISABLE_INTR (flag);
     next_port = next_port->next;
 
     //Port Data Structure
@@ -34,6 +36,7 @@ PORT create_new_port (PROCESS owner)
         newport->next = NULL;
     }
     owner->first_port = newport;
+    ENABLE_INTR (flag);
     return newport;
 }
 
@@ -53,6 +56,8 @@ void close_port (PORT port)
 //Sends data to specified port
 void send (PORT dest_port, void* data)
 {
+    volatile int flag;
+    DISABLE_INTR(flag);
     PROCESS dest_process = dest_port->owner;
     //if (reciever is recieved blocked and port is open)
     if (dest_port->open && dest_process->state == STATE_RECEIVE_BLOCKED)
@@ -82,11 +87,14 @@ void send (PORT dest_port, void* data)
     active_proc->param_data = data;
     remove_ready_queue (active_proc);
     resign();
+    ENABLE_INTR(flag);
 }
 
 //Sends data to specified port
 void message (PORT dest_port, void* data)
 {
+    volatile int flag;
+    DISABLE_INTR(flag);
     PROCESS dest_process = dest_port->owner;
     //if (receiver is receive blocked and port is open)
     if (dest_process->state == STATE_RECEIVE_BLOCKED && dest_port->open)
@@ -113,12 +121,15 @@ void message (PORT dest_port, void* data)
         active_proc->param_data = data;
     }
     resign();
+    ENABLE_INTR(flag);
 }
 
 
 
 void* receive (PROCESS* sender)
 {
+    volatile int flag;
+    DISABLE_INTR(flag);
     PROCESS receiver_process;
     //Scanning send blocked list
     PORT p = active_proc->first_port;
@@ -147,6 +158,7 @@ void* receive (PROCESS* sender)
         {
             //Change state of sender to STATE_READY
             add_ready_queue (receiver_process);
+            ENABLE_INTR (flag);
             return receiver_process->param_data;
         }
         //if (sender is STATE_SEND_BLOCKED)
@@ -154,6 +166,7 @@ void* receive (PROCESS* sender)
         {
             //Change state of sender to STATE_REPLY_BLOCKED
             receiver_process->state = STATE_REPLY_BLOCKED;
+	          ENABLE_INTR (flag);
             return receiver_process->param_data;
         }
     }
@@ -164,16 +177,20 @@ void* receive (PROCESS* sender)
     //Change to STATE_RECEIVED_BLOCKED
     resign();
     *sender = active_proc->param_proc;
+    ENABLE_INTR (flag);
     return active_proc->param_data;
 }
 
 
 void reply (PROCESS sender)
 {
+    volatile int flag;
+    DISABLE_INTR (flag);
     //Add the process replied to back to the ready queue
     add_ready_queue (sender);
-    resign();
     //resign()
+    resign();
+    ENABLE_INTR (flag);
 }
 
 //Initializes ipc

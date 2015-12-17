@@ -37,9 +37,6 @@ void init_idt_entry (int intr_no, void (*isr) (void))
   idt[intr_no].selector     = CODE_SELECTOR;
 }
 
-
-
-
 /*
  * Timer ISR
  */
@@ -112,7 +109,7 @@ void dummy_isr_com1 ()
     asm ("isr_com1:");
     asm ("pushl %eax;pushl %ecx;pushl %edx");
     asm ("pushl %ebx;pushl %ebp;pushl %esi;pushl %edi");
-
+    p = interrupt_table[COM1_IRQ];
     /* Save the context pointer ESP to the PCB */
     asm ("movl %%esp,%0" : "=m" (active_proc->esp) : );
 

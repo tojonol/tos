@@ -7,6 +7,9 @@ PORT timer_port;
 
 void sleep(int ticks)
 {
+    Timer_Message msg;
+    msg.num_of_ticks = ticks;
+    send(timer_port, &msg);
 }
 
 //process for the timer notifier slide 13

@@ -2,7 +2,14 @@
 
 PCB pcb[MAX_PROCS];
 PCB *next_proc_ptr;
-
+const char *statelist[] =
+	{ "READY          ",
+	  "SEND_BLOCKED   ",
+	  "REPLY_BLOCKED  ",
+	  "RECEIVE_BLOCKED",
+	  "MESSAGE_BLOCKED",
+	  "INTR_BLOCKED   "
+	};
 //helper method for maintaining the stack
 MEM_ADDR pushStack(MEM_ADDR esp, LONG ptr)
 {
@@ -100,9 +107,17 @@ void print_process(WINDOW* wnd, PROCESS p)
     wprintf(wnd, "-----------------------------------------------\n");
 
     if (p == active_proc)
-        wprintf(wnd, "READY      *     %d %s\n", p->priority,p->name);
-    else
-        wprintf(wnd, "READY            %d %s\n", p->priority,p->name);
+		{
+
+				 wprintf(wnd, statelist[p->state]);
+			 wprintf(wnd, "      *     %d %s\n", p->priority,p->name);
+
+		}
+		else
+		{
+				 wprintf(wnd, statelist[p->state]);
+			 wprintf(wnd, "           %d %s\n", p->priority,p->name);
+		 }
 }
 
 //HOMEWORK 3
@@ -117,9 +132,15 @@ void print_all_processes(WINDOW* wnd)
 	if (p->used)
 	{
 	     if (p == active_proc)
-        	wprintf(wnd, "READY      *     %d %s\n", p->priority,p->name);
-    	     else
-        	wprintf(wnd, "READY            %d %s\n", p->priority,p->name);
+			 {
+		 				wprintf(wnd, statelist[p->state]);
+        	wprintf(wnd, "      *     %d %s\n", p->priority,p->name);
+				}
+				   else
+					 {
+				 				wprintf(wnd, statelist[p->state]);
+		        	wprintf(wnd, "           %d %s\n", p->priority,p->name);
+						}
 	     p++;
 	}
     }

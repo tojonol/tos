@@ -132,7 +132,7 @@ PROCESS dispatcher()
 void resign()
 {
 
-  check_active();
+  //check_active();
 
   //hw7
   asm("pushfl;");
@@ -155,7 +155,7 @@ void resign()
 
   //allow dispatcher to set active process
   active_proc = dispatcher();
-  check_active();
+  //check_active();
 
   asm ("movl %0,%%esp" : : "r" (active_proc->esp));
 

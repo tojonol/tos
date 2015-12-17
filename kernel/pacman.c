@@ -1,17 +1,17 @@
-
-
 #include <kernel.h>
 
 #define MAZE_WIDTH  19
 #define MAZE_HEIGHT 16
 #define GHOST_CHAR  0x02
+#define MAX_GHOSTS 5
 
 typedef struct {
     int x;
     int y;
+    int used;
 } GHOST;
-
-
+GHOST ghost_array[MAX_GHOSTS];
+int ghosttotal;
 WINDOW* pacman_wnd;
 
 
@@ -114,18 +114,18 @@ int random()
     return last_random_number;
 }
 
-void init_ghost(GHOST* ghost)
+void init_ghost(int ghost)
 {
-  while (1)
-  {
-    int x = random() % MAZE_WIDTH;
-    int y = random() % MAZE_HEIGHT;
-    if (maze[y][x] != ' ')
-      continue;
-    ghost->x = x;
-    ghost->y = y;
-    break;
-  }
+    while (1)
+    {
+      	int x = random() % MAZE_WIDTH;
+      	int y = random() % MAZE_HEIGHT;
+      	if (maze[y][x] != ' ')
+            continue;
+      	ghost_array[ghost].x = x;
+      	ghost_array[ghost].y = y;
+      	break;
+    }
 }
 
 
@@ -151,60 +151,108 @@ void next_direction(int* dx, int* dy)
     }
 }
 
-BOOL move_ghost(GHOST* ghost, int dx, int dy)
+BOOL move_ghost(int ghost, int dx, int dy)
 {
-    int prev_x = ghost->x;
-    int prev_y = ghost->y;
+    int prev_x = ghost_array[ghost].x;
+    int prev_y = ghost_array[ghost].y;
     int new_x = prev_x + dx;
     int new_y = prev_y + dy;
     //if there is no open space
     if (maze[new_y][new_x] != ' ')
+    {
+      /*wprintf(pacman_wnd, ">>");
+      wprintf(pacman_wnd, maze[new_y][new_x]);
+      wprintf(pacman_wnd, "<<");*/
       return FALSE;
-    move_cursor(pacman_wnd, prev_x, prev_y);
+    }
     remove_cursor(pacman_wnd);
+    move_cursor(pacman_wnd, prev_x, prev_y);
     move_cursor(pacman_wnd, new_x, new_y);
     show_cursor(pacman_wnd);
-    ghost->x = new_x;
-    ghost->y = new_y;
+    ghost_array[ghost].x = new_x;
+    ghost_array[ghost].y = new_y;
     return TRUE;
 }
 
-void create_new_ghost()
+void create_new_ghost(PROCESS self, PARAM param)
 {
-    GHOST ghost;
-    int dx, dy;
+    PORT outport = (PORT) param;
 
-    init_ghost(&ghost);
+    int dx, dy;
+    int data = 3;
+
+    //init_ghost(&ghost);
     while (1)
     {
       next_direction(&dx, &dy);
-      while (move_ghost(&ghost, dx, dy) == FALSE)
+      while (move_ghost(self->name, dx, dy) == FALSE)
       {
         next_direction(&dx, &dy);
+
+        //wprintf(pacman_wnd, "send");
+        //wprintf(pacman_wnd, self->name);
       }
+      //message(outport, data);
       resign();
     }
 }
 
 void ghost_process(PROCESS self, PARAM param)
 {
-    create_new_ghost();
+    create_new_ghost(self, param);
 }
 
+void create_main_process(PROCESS self, PORT inport)
+{
+    int *data1, counter;
+    PROCESS ghost;
+    resign();
+    while(1)
+    {
+      //wprintf(pacman_wnd, "waiting");
+      data1 = (int*) receive(&ghost);
+
+      resign();
+      //reply(&ghost);
+
+      //wprintf(pacman_wnd, self->name);
+    }
+}
+
+void main_process(PROCESS self, PARAM param)
+{
+
+  //  wprintf(pacman_wnd, "MAINP ");
+    create_main_process(self, (PORT)param);
+}
 
 void init_pacman(WINDOW* wnd, int num_ghosts)
 {
+    PORT comport = NULL;
+    int j;
+    ghosttotal = num_ghosts;
+
+    for(j=0;j<MAX_GHOSTS;j++)
+    {
+      init_ghost(j);
+      if(j>=ghosttotal)
+        ghost_array[j].used = 0;
+      else
+        ghost_array[j].used = 1;
+    }
+
     pacman_wnd = wnd;
     pacman_wnd->width = MAZE_WIDTH;
     pacman_wnd->height = MAZE_HEIGHT + 1;
     pacman_wnd->cursor_char = GHOST_CHAR;
 
     draw_maze();
+    //comport = create_process(main_process, 3, 0, "Main");
 
-    int j;
+
     for (j = 0; j < num_ghosts; j++)
     {
-        create_process(ghost_process, 3, 0, "Ghost");
+        create_process(ghost_process, 4, comport, j);
     }
     resign();
 }

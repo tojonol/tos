@@ -56,6 +56,17 @@ void advance_cursor(WINDOW* wnd)
 	}
 }
 
+//reverse cursor
+void reverse_cursor(WINDOW* wnd)
+{
+	if (0 == wnd->cursor_x)
+	{
+		wnd->cursor_x = 0;
+		wnd->cursor_y--;
+	}
+	wnd->cursor_x--;
+}
+
 //write a char to the screen
 void output_char(WINDOW* wnd, unsigned char c)
 {
